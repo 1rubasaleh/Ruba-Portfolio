@@ -1,6 +1,7 @@
 const express = require("express");
 const projectRoutes = require("./routes/projectRoutes");
 const app = express();
+app.use(express.json());
 app.use("/projects", projectRoutes);
 app.get("/", (req, res) => {
   console.log(req.method);
