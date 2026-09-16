@@ -10,6 +10,8 @@ const userRoutes = require("./routes/userRoutes");
 
 const profileRoutes = require("./routes/profileRoutes");
 
+const projectSkillRoutes = require("./routes/projectSkillRoutes");
+
 const connectDB = require("./config/db");
 
 const app = express();
@@ -25,6 +27,10 @@ app.use("/roles", rolesRoutes);
 app.use("/messages", messageRoutes);
 
 app.use("/users", userRoutes);
+
+app.use("/profiles", profileRoutes);
+
+app.use("/project-skills", projectSkillRoutes);
 
 app.get("/", (req, res) => {
   console.log(req.method);
