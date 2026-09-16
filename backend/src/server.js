@@ -1,10 +1,12 @@
 const express = require("express");
 const projectRoutes = require("./routes/projectRoutes");
+const rolesRoutes = require("./routes/roleRoutes");
 const connectDB = require("./config/db");
 const app = express();
 connectDB();
 app.use(express.json());
 app.use("/projects", projectRoutes);
+app.use("/roles", rolesRoutes);
 app.get("/", (req, res) => {
   console.log(req.method);
   console.log(req.url);
