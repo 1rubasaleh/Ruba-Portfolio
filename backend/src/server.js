@@ -8,6 +8,8 @@ const messageRoutes = require("./routes/messageRoutes");
 
 const userRoutes = require("./routes/userRoutes");
 
+const profileRoutes = require("./routes/profileRoutes");
+
 const connectDB = require("./config/db");
 
 const app = express();
