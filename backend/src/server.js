@@ -16,6 +16,10 @@ const favoriteRoutes = require("./routes/favoriteRoutes");
 
 const educationRoutes = require("./routes/educationRoutes");
 
+const skillRoutes = require("./routes/skillRoutes");
+
+const experienceRoutes = require("./routes/experienceRoutes");
+
 const connectDB = require("./config/db");
 
 const app = express();
@@ -36,9 +40,13 @@ app.use("/profiles", profileRoutes);
 
 app.use("/project-skills", projectSkillRoutes);
 
+app.use("/skills", skillRoutes);
+
 app.use("/favorites", favoriteRoutes);
 
 app.use("/education", educationRoutes);
+
+app.use("/experience", experienceRoutes);
 
 app.get("/", (req, res) => {
   console.log(req.method);
