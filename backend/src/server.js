@@ -20,6 +20,8 @@ const skillRoutes = require("./routes/skillRoutes");
 
 const experienceRoutes = require("./routes/experienceRoutes");
 
+const authRoutes = require("./routes/authRoutes");
+
 const connectDB = require("./config/db");
 
 const app = express();
@@ -47,6 +49,8 @@ app.use("/favorites", favoriteRoutes);
 app.use("/education", educationRoutes);
 
 app.use("/experience", experienceRoutes);
+
+app.use("/auth", authRoutes);
 
 app.get("/", (req, res) => {
   console.log(req.method);
