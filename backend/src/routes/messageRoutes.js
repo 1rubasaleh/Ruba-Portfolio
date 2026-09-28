@@ -1,7 +1,7 @@
 const express = require("express");
-
+const authMiddleware = require("../middleware/authMiddleware");
+const authorize = require("../middleware/roleMiddleware");
 const router = express.Router();
-
 const {
   getMessages,
   getMessageById,
@@ -18,6 +18,6 @@ router.post("/", createMessage);
 
 router.put("/:id", updateMessage);
 
-router.delete("/:id", deleteMessage);
+router.delete("/:id", authMiddleware, authorize(1), deleteMessage);
 
 module.exports = router;

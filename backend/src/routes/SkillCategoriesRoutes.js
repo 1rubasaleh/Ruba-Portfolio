@@ -1,7 +1,8 @@
 const express = require("express");
 
 const router = express.Router();
-
+const authMiddleware = require("../middleware/authMiddleware");
+const authorize = require("../middleware/roleMiddleware");
 const {
   getSkillCategories,
   getSkillCategoryById,
@@ -14,10 +15,10 @@ router.get("/", getSkillCategories);
 
 router.get("/:id", getSkillCategoryById);
 
-router.post("/", createSkillCategory);
+router.post("/", authMiddleware, authorize(1), createSkillCategory);
 
-router.put("/:id", updateSkillCategory);
+router.put("/:id", authMiddleware, authorize(1), updateSkillCategory);
 
-router.delete("/:id", deleteSkillCategory);
+router.delete("/:id", authMiddleware, authorize(1), deleteSkillCategory);
 
 module.exports = router;

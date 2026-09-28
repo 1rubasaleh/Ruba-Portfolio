@@ -1,7 +1,8 @@
 const express = require("express");
 
 const router = express.Router();
-
+const authMiddleware = require("../middleware/authMiddleware");
+const authorize = require("../middleware/roleMiddleware");
 const {
   getExperiences,
   getExperienceById,
@@ -17,10 +18,10 @@ router.get("/profile/:profileId", getExperiencesByProfileId);
 
 router.get("/:id", getExperienceById);
 
-router.post("/", createExperience);
+router.post("/", authMiddleware, authorize(1), createExperience);
 
-router.put("/:id", updateExperience);
+router.put("/:id", authMiddleware, authorize(1), updateExperience);
 
-router.delete("/:id", deleteExperience);
+router.delete("/:id", authMiddleware, authorize(1), deleteExperience);
 
 module.exports = router;

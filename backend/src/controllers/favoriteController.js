@@ -54,7 +54,8 @@ const getUsersByProjectIdController = async (req, res) => {
 // Add favorite
 const createFavoriteController = async (req, res) => {
   try {
-    const { userId, projectId } = req.body;
+    const { projectId } = req.params;
+    const userId = req.user.userId;
 
     const favorite = await createFavorite(userId, projectId);
 

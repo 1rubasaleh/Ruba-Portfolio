@@ -1,6 +1,8 @@
 const express = require("express");
 
 const router = express.Router();
+const authMiddleware = require("../middleware/authMiddleware");
+const authorize = require("../middleware/roleMiddleware");
 
 const {
   getEducation,
@@ -17,10 +19,10 @@ router.get("/:id", getEducationById);
 
 router.get("/profile/:profileId", getEducationByProfileId);
 
-router.post("/", createEducation);
+router.post("/", authMiddleware, authorize(1), createEducation);
 
-router.put("/:id", updateEducation);
+router.put("/:id", authMiddleware, authorize(1), updateEducation);
 
-router.delete("/:id", deleteEducation);
+router.delete("/:id", authMiddleware, authorize(1), deleteEducation);
 
 module.exports = router;

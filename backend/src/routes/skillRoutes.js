@@ -2,6 +2,10 @@ const express = require("express");
 
 const router = express.Router();
 
+const authMiddleware = require("../middleware/authMiddleware");
+
+const authorize = require("../middleware/roleMiddleware");
+
 const {
   getSkills,
   getSkillById,
@@ -14,10 +18,10 @@ router.get("/", getSkills);
 
 router.get("/:id", getSkillById);
 
-router.post("/", createSkill);
+router.post("/", authMiddleware, authorize(1), createSkill);
 
-router.put("/:id", updateSkill);
+router.put("/:id", authMiddleware, authorize(1), updateSkill);
 
-router.delete("/:id", deleteSkill);
+router.delete("/:id", authMiddleware, authorize(1), deleteSkill);
 
 module.exports = router;
