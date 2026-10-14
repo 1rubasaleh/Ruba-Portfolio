@@ -1,12 +1,15 @@
 const connectDB = require("../config/db");
+const runQuery = require("../config/query");
 
 // Get all experiences
 const getAllExperiences = async () => {
   const pool = await connectDB();
 
-  const result = await pool
-    .request()
-    .query("SELECT * FROM portfolio.Experiences");
+  const result = await runQuery(
+    pool,
+    "SELECT * FROM portfolio.Experiences",
+    'SELECT * FROM portfolio."Experiences"',
+  );
 
   return result.recordset;
 };
@@ -15,11 +18,15 @@ const getAllExperiences = async () => {
 const getExperienceById = async (id) => {
   const pool = await connectDB();
 
-  const result = await pool.request().input("id", id).query(`
+  const result = await runQuery(pool, `
       SELECT *
       FROM portfolio.Experiences
       WHERE ExperienceId = @id
-    `);
+    `, `
+      SELECT *
+      FROM portfolio."Experiences"
+      WHERE "ExperienceId" = $1
+    `, { id });
 
   return result.recordset[0];
 };
@@ -28,11 +35,15 @@ const getExperienceById = async (id) => {
 const getExperiencesByProfileId = async (profileId) => {
   const pool = await connectDB();
 
-  const result = await pool.request().input("profileId", profileId).query(`
+  const result = await runQuery(pool, `
       SELECT *
       FROM portfolio.Experiences
       WHERE ProfileId = @profileId
-    `);
+    `, `
+      SELECT *
+      FROM portfolio."Experiences"
+      WHERE "ProfileId" = $1
+    `, { profileId });
 
   return result.recordset;
 };
@@ -48,20 +59,30 @@ const createExperience = async (
 ) => {
   const pool = await connectDB();
 
-  const result = await pool
-    .request()
-    .input("profileId", profileId)
-    .input("companyName", companyName)
-    .input("position", position)
-    .input("startDate", startDate)
-    .input("endDate", endDate)
-    .input("description", description).query(`
+  const result = await runQuery(
+    pool,
+    `
       INSERT INTO portfolio.Experiences
       (ProfileId, CompanyName, Position, StartDate, EndDate, Description)
       OUTPUT INSERTED.*
       VALUES
       (@profileId, @companyName, @position, @startDate, @endDate, @description)
-    `);
+    `,
+    `
+      INSERT INTO portfolio."Experiences"
+      (
+        "ProfileId",
+        "CompanyName",
+        "Position",
+        "StartDate",
+        "EndDate",
+        "Description"
+      )
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+    `,
+    { profileId, companyName, position, startDate, endDate, description },
+  );
 
   return result.recordset[0];
 };
@@ -78,15 +99,9 @@ const updateExperience = async (
 ) => {
   const pool = await connectDB();
 
-  const result = await pool
-    .request()
-    .input("id", id)
-    .input("profileId", profileId)
-    .input("companyName", companyName)
-    .input("position", position)
-    .input("startDate", startDate)
-    .input("endDate", endDate)
-    .input("description", description).query(`
+  const result = await runQuery(
+    pool,
+    `
       UPDATE portfolio.Experiences
       SET
         ProfileId = @profileId,
@@ -97,7 +112,29 @@ const updateExperience = async (
         Description = @description
       OUTPUT INSERTED.*
       WHERE ExperienceId = @id
-    `);
+    `,
+    `
+      UPDATE portfolio."Experiences"
+      SET
+        "ProfileId" = $2,
+        "CompanyName" = $3,
+        "Position" = $4,
+        "StartDate" = $5,
+        "EndDate" = $6,
+        "Description" = $7
+      WHERE "ExperienceId" = $1
+      RETURNING *
+    `,
+    {
+      id,
+      profileId,
+      companyName,
+      position,
+      startDate,
+      endDate,
+      description,
+    },
+  );
 
   return result.recordset[0];
 };
@@ -106,11 +143,15 @@ const updateExperience = async (
 const deleteExperience = async (id) => {
   const pool = await connectDB();
 
-  const result = await pool.request().input("id", id).query(`
+  const result = await runQuery(pool, `
       DELETE FROM portfolio.Experiences
       OUTPUT DELETED.*
       WHERE ExperienceId = @id
-    `);
+    `, `
+      DELETE FROM portfolio."Experiences"
+      WHERE "ExperienceId" = $1
+      RETURNING *
+    `, { id });
 
   return result.recordset[0];
 };

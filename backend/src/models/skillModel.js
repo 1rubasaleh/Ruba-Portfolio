@@ -1,13 +1,19 @@
 const connectDB = require("../config/db");
+const runQuery = require("../config/query");
 
 // Get all skills
 const getAllSkills = async () => {
   const pool = await connectDB();
 
-  const result = await pool.request().query(`
+  const result = await runQuery(pool, `
     SELECT s.*, c.CategoryName
     FROM portfolio.Skills AS s
     LEFT JOIN portfolio.SkillCategories AS c ON c.CategoryId = s.CategoryId
+  `, `
+    SELECT s.*, c."CategoryName"
+    FROM portfolio."Skills" AS s
+    LEFT JOIN portfolio."SkillCategories" AS c
+      ON c."CategoryId" = s."CategoryId"
   `);
 
   return result.recordset;
@@ -17,12 +23,18 @@ const getAllSkills = async () => {
 const getSkillById = async (id) => {
   const pool = await connectDB();
 
-  const result = await pool.request().input("id", id).query(`
+  const result = await runQuery(pool, `
       SELECT s.*, c.CategoryName
       FROM portfolio.Skills AS s
       LEFT JOIN portfolio.SkillCategories AS c ON c.CategoryId = s.CategoryId
       WHERE s.SkillId = @id
-    `);
+    `, `
+      SELECT s.*, c."CategoryName"
+      FROM portfolio."Skills" AS s
+      LEFT JOIN portfolio."SkillCategories" AS c
+        ON c."CategoryId" = s."CategoryId"
+      WHERE s."SkillId" = $1
+    `, { id });
 
   return result.recordset[0];
 };
@@ -31,17 +43,22 @@ const getSkillById = async (id) => {
 const createSkill = async (name, categoryId, iconUrl) => {
   const pool = await connectDB();
 
-  const result = await pool
-    .request()
-    .input("name", name)
-    .input("categoryId", categoryId)
-    .input("iconUrl", iconUrl).query(`
+  const result = await runQuery(
+    pool,
+    `
       INSERT INTO portfolio.Skills
       (Name, CategoryId, IconUrl)
       OUTPUT INSERTED.*
       VALUES
       (@name, @categoryId, @iconUrl)
-    `);
+    `,
+    `
+      INSERT INTO portfolio."Skills" ("Name", "CategoryId", "IconUrl")
+      VALUES ($1, $2, $3)
+      RETURNING *
+    `,
+    { name, categoryId, iconUrl },
+  );
 
   return result.recordset[0];
 };
@@ -50,12 +67,9 @@ const createSkill = async (name, categoryId, iconUrl) => {
 const updateSkill = async (id, name, categoryId, iconUrl) => {
   const pool = await connectDB();
 
-  const result = await pool
-    .request()
-    .input("id", id)
-    .input("name", name)
-    .input("categoryId", categoryId)
-    .input("iconUrl", iconUrl).query(`
+  const result = await runQuery(
+    pool,
+    `
       UPDATE portfolio.Skills
       SET
         Name = @name,
@@ -63,7 +77,15 @@ const updateSkill = async (id, name, categoryId, iconUrl) => {
         IconUrl = @iconUrl
       OUTPUT INSERTED.*
       WHERE SkillId = @id
-    `);
+    `,
+    `
+      UPDATE portfolio."Skills"
+      SET "Name" = $2, "CategoryId" = $3, "IconUrl" = $4
+      WHERE "SkillId" = $1
+      RETURNING *
+    `,
+    { id, name, categoryId, iconUrl },
+  );
 
   return result.recordset[0];
 };
@@ -72,11 +94,15 @@ const updateSkill = async (id, name, categoryId, iconUrl) => {
 const deleteSkill = async (id) => {
   const pool = await connectDB();
 
-  const result = await pool.request().input("id", id).query(`
+  const result = await runQuery(pool, `
       DELETE FROM portfolio.Skills
       OUTPUT DELETED.*
       WHERE SkillId = @id
-    `);
+    `, `
+      DELETE FROM portfolio."Skills"
+      WHERE "SkillId" = $1
+      RETURNING *
+    `, { id });
 
   return result.recordset[0];
 };

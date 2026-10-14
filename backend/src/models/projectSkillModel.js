@@ -1,12 +1,15 @@
 const connectDB = require("../config/db");
+const runQuery = require("../config/query");
 
 // Get all project skills
 const getAllProjectSkills = async () => {
   const pool = await connectDB();
 
-  const result = await pool
-    .request()
-    .query("SELECT * FROM portfolio.ProjectSkills");
+  const result = await runQuery(
+    pool,
+    "SELECT * FROM portfolio.ProjectSkills",
+    'SELECT * FROM portfolio."ProjectSkills"',
+  );
 
   return result.recordset;
 };
@@ -15,11 +18,15 @@ const getAllProjectSkills = async () => {
 const getSkillsByProjectId = async (projectId) => {
   const pool = await connectDB();
 
-  const result = await pool.request().input("projectId", projectId).query(`
+  const result = await runQuery(pool, `
       SELECT *
       FROM portfolio.ProjectSkills
       WHERE ProjectId = @projectId
-    `);
+    `, `
+      SELECT *
+      FROM portfolio."ProjectSkills"
+      WHERE "ProjectId" = $1
+    `, { projectId });
 
   return result.recordset;
 };
@@ -28,11 +35,15 @@ const getSkillsByProjectId = async (projectId) => {
 const getProjectsBySkillId = async (skillId) => {
   const pool = await connectDB();
 
-  const result = await pool.request().input("skillId", skillId).query(`
+  const result = await runQuery(pool, `
       SELECT *
       FROM portfolio.ProjectSkills
       WHERE SkillId = @skillId
-    `);
+    `, `
+      SELECT *
+      FROM portfolio."ProjectSkills"
+      WHERE "SkillId" = $1
+    `, { skillId });
 
   return result.recordset;
 };
@@ -41,16 +52,22 @@ const getProjectsBySkillId = async (skillId) => {
 const createProjectSkill = async (projectId, skillId) => {
   const pool = await connectDB();
 
-  const result = await pool
-    .request()
-    .input("projectId", projectId)
-    .input("skillId", skillId).query(`
+  const result = await runQuery(
+    pool,
+    `
       INSERT INTO portfolio.ProjectSkills
       (ProjectId, SkillId)
       OUTPUT INSERTED.*
       VALUES
       (@projectId, @skillId)
-    `);
+    `,
+    `
+      INSERT INTO portfolio."ProjectSkills" ("ProjectId", "SkillId")
+      VALUES ($1, $2)
+      RETURNING *
+    `,
+    { projectId, skillId },
+  );
 
   return result.recordset[0];
 };
@@ -59,15 +76,22 @@ const createProjectSkill = async (projectId, skillId) => {
 const deleteProjectSkill = async (projectId, skillId) => {
   const pool = await connectDB();
 
-  const result = await pool
-    .request()
-    .input("projectId", projectId)
-    .input("skillId", skillId).query(`
+  const result = await runQuery(
+    pool,
+    `
       DELETE FROM portfolio.ProjectSkills
       OUTPUT DELETED.*
       WHERE ProjectId = @projectId
       AND SkillId = @skillId
-    `);
+    `,
+    `
+      DELETE FROM portfolio."ProjectSkills"
+      WHERE "ProjectId" = $1
+      AND "SkillId" = $2
+      RETURNING *
+    `,
+    { projectId, skillId },
+  );
 
   return result.recordset[0];
 };

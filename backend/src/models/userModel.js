@@ -1,12 +1,16 @@
 const connectDB = require("../config/db");
+const runQuery = require("../config/query");
 
 // Get all users
 const getAllUsers = async () => {
   const pool = await connectDB();
 
-  const result = await pool.request().query(`
+  const result = await runQuery(pool, `
     SELECT UserId, Name, Email, RoleId, CreatedAt
     FROM portfolio.Users
+  `, `
+    SELECT "UserId", "Name", "Email", "RoleId", "CreatedAt"
+    FROM portfolio."Users"
   `);
 
   return result.recordset;
@@ -16,14 +20,15 @@ const getAllUsers = async () => {
 const getUserById = async (id) => {
   const pool = await connectDB();
 
-  const result = await pool
-    .request()
-    .input("id", id)
-    .query(`
+  const result = await runQuery(pool, `
       SELECT UserId, Name, Email, RoleId, CreatedAt
       FROM portfolio.Users
       WHERE UserId = @id
-    `);
+    `, `
+      SELECT "UserId", "Name", "Email", "RoleId", "CreatedAt"
+      FROM portfolio."Users"
+      WHERE "UserId" = $1
+    `, { id });
 
   return result.recordset[0];
 };
@@ -32,12 +37,9 @@ const getUserById = async (id) => {
 const createUser = async (name, email, passwordHash, roleId) => {
   const pool = await connectDB();
 
-  const result = await pool
-    .request()
-    .input("name", name)
-    .input("email", email)
-    .input("passwordHash", passwordHash)
-    .input("roleId", roleId).query(`
+  const result = await runQuery(
+    pool,
+    `
       INSERT INTO portfolio.Users
       (Name, Email, PasswordHash, RoleId)
       OUTPUT
@@ -48,7 +50,15 @@ const createUser = async (name, email, passwordHash, roleId) => {
         INSERTED.CreatedAt
       VALUES
       (@name, @email, @passwordHash, @roleId)
-    `);
+    `,
+    `
+      INSERT INTO portfolio."Users"
+      ("Name", "Email", "PasswordHash", "RoleId")
+      VALUES ($1, $2, $3, $4)
+      RETURNING "UserId", "Name", "Email", "RoleId", "CreatedAt"
+    `,
+    { name, email, passwordHash, roleId },
+  );
 
   return result.recordset[0];
 };
@@ -57,13 +67,9 @@ const createUser = async (name, email, passwordHash, roleId) => {
 const updateUser = async (id, name, email, passwordHash, roleId) => {
   const pool = await connectDB();
 
-  const result = await pool
-    .request()
-    .input("id", id)
-    .input("name", name)
-    .input("email", email)
-    .input("passwordHash", passwordHash)
-    .input("roleId", roleId).query(`
+  const result = await runQuery(
+    pool,
+    `
       UPDATE portfolio.Users
       SET
         Name = @name,
@@ -77,7 +83,19 @@ const updateUser = async (id, name, email, passwordHash, roleId) => {
         INSERTED.RoleId,
         INSERTED.CreatedAt
       WHERE UserId = @id
-    `);
+    `,
+    `
+      UPDATE portfolio."Users"
+      SET
+        "Name" = $2,
+        "Email" = $3,
+        "PasswordHash" = $4,
+        "RoleId" = $5
+      WHERE "UserId" = $1
+      RETURNING "UserId", "Name", "Email", "RoleId", "CreatedAt"
+    `,
+    { id, name, email, passwordHash, roleId },
+  );
 
   return result.recordset[0];
 };
@@ -86,7 +104,7 @@ const updateUser = async (id, name, email, passwordHash, roleId) => {
 const deleteUser = async (id) => {
   const pool = await connectDB();
 
-  const result = await pool.request().input("id", id).query(`
+  const result = await runQuery(pool, `
       DELETE FROM portfolio.Users
       OUTPUT
         DELETED.UserId,
@@ -95,7 +113,11 @@ const deleteUser = async (id) => {
         DELETED.RoleId,
         DELETED.CreatedAt
       WHERE UserId = @id
-    `);
+    `, `
+      DELETE FROM portfolio."Users"
+      WHERE "UserId" = $1
+      RETURNING "UserId", "Name", "Email", "RoleId", "CreatedAt"
+    `, { id });
 
   return result.recordset[0];
 };

@@ -1,7 +1,22 @@
 const authMode =
-  process.env.DB_AUTH_MODE || (process.env.NODE_ENV === "production" ? "sql" : "windows");
+  process.env.DB_AUTH_MODE ||
+  (process.env.NODE_ENV === "production" ? "sql" : "windows");
 
 const createDatabaseClient = () => {
+  if (authMode === "postgres") {
+    if (!process.env.DATABASE_URL) {
+      throw new Error("PostgreSQL authentication requires DATABASE_URL.");
+    }
+
+    const { Pool } = require("pg");
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: true },
+    });
+    pool.provider = "postgres";
+    return pool;
+  }
+
   if (authMode === "sql") {
     const requiredSettings = ["DB_SERVER", "DB_NAME", "DB_USER", "DB_PASSWORD"];
     const missingSettings = requiredSettings.filter(
@@ -34,7 +49,9 @@ const createDatabaseClient = () => {
   }
 
   if (authMode !== "windows") {
-    throw new Error("DB_AUTH_MODE must be either 'windows' or 'sql'.");
+    throw new Error(
+      "DB_AUTH_MODE must be 'windows', 'sql', or 'postgres'.",
+    );
   }
   if (process.env.NODE_ENV === "production") {
     throw new Error("Windows authentication is not supported in production.");
@@ -55,10 +72,21 @@ const createDatabaseClient = () => {
   };
 };
 
+let postgresPool;
+
 const connectDB = async () => {
   try {
+    if (authMode === "postgres") {
+      if (!postgresPool) {
+        postgresPool = createDatabaseClient();
+      }
+      await postgresPool.query("SELECT 1");
+      return postgresPool;
+    }
+
     const { sql, config } = createDatabaseClient();
     const pool = await sql.connect(config);
+    pool.provider = "sqlserver";
 
     console.log("Database connected successfully");
 

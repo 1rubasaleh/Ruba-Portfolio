@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const connectDB = require("../config/db");
+const runQuery = require("../config/query");
 
 const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -28,12 +29,17 @@ const authMiddleware = async (req, res, next) => {
 
   try {
     const pool = await connectDB();
-    const result = await pool.request().input("userId", decoded.userId).query(`
+    const result = await runQuery(pool, `
       SELECT u.UserId, u.Name, u.Email, u.RoleId, r.RoleName
       FROM portfolio.Users AS u
       INNER JOIN portfolio.Roles AS r ON r.RoleId = u.RoleId
       WHERE u.UserId = @userId
-    `);
+    `, `
+      SELECT u."UserId", u."Name", u."Email", u."RoleId", r."RoleName"
+      FROM portfolio."Users" AS u
+      INNER JOIN portfolio."Roles" AS r ON r."RoleId" = u."RoleId"
+      WHERE u."UserId" = $1
+    `, { userId: decoded.userId });
 
     const user = result.recordset[0];
     if (!user) {

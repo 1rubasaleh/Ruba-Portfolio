@@ -1,4 +1,3 @@
-const sql = require("mssql/msnodesqlv8");
 const connectDB = require("../src/config/db");
 
 const email = process.argv[2]?.trim().toLowerCase();
@@ -15,6 +14,11 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
 
 async function grantAdmin(accountEmail) {
   const pool = await connectDB();
+  if (pool.provider === "postgres") {
+    return grantPostgresAdmin(pool, accountEmail);
+  }
+
+  const sql = require("mssql/msnodesqlv8");
   const transaction = new sql.Transaction(pool);
   let transactionStarted = false;
 
@@ -83,5 +87,72 @@ async function grantAdmin(accountEmail) {
     throw error;
   } finally {
     await pool.close();
+  }
+}
+
+async function grantPostgresAdmin(pool, accountEmail) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const roleResult = await client.query(
+      `
+        SELECT "RoleId"
+        FROM portfolio."Roles"
+        WHERE LOWER(BTRIM("RoleName")) = $1
+        FOR UPDATE
+      `,
+      ["admin"],
+    );
+
+    if (roleResult.rowCount > 1) {
+      throw new Error("Multiple admin roles exist; resolve duplicate role rows first.");
+    }
+
+    let adminRoleId = roleResult.rows[0]?.RoleId;
+    if (!adminRoleId) {
+      const insertedRole = await client.query(
+        `
+          INSERT INTO portfolio."Roles" ("RoleName")
+          VALUES ($1)
+          RETURNING "RoleId"
+        `,
+        ["admin"],
+      );
+      adminRoleId = insertedRole.rows[0].RoleId;
+    }
+
+    const userResult = await client.query(
+      `
+        SELECT "UserId"
+        FROM portfolio."Users"
+        WHERE LOWER(BTRIM("Email")) = $1
+        FOR UPDATE
+      `,
+      [accountEmail],
+    );
+
+    if (userResult.rowCount !== 1) {
+      throw new Error(
+        userResult.rowCount === 0
+          ? "No existing account has that email. Register your account first."
+          : "Multiple accounts have that email; resolve duplicate accounts first.",
+      );
+    }
+
+    await client.query(
+      'UPDATE portfolio."Users" SET "RoleId" = $1 WHERE "UserId" = $2',
+      [adminRoleId, userResult.rows[0].UserId],
+    );
+
+    await client.query("COMMIT");
+    console.log("Admin role assigned to the existing account.");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+    await pool.end();
   }
 }

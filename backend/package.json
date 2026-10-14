@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node --env-file-if-exists=.env src/server.js"
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "db:migrate:postgres": "node --env-file-if-exists=.env scripts/migrate-sqlserver-to-postgres.js",
+    "test": "node --test"
   },
   "keywords": [],
   "author": "",
@@ -17,7 +19,10 @@
     "bcryptjs": "^3.0.3",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "msnodesqlv8": "^5.4.0",
-    "mssql": "^12.7.1"
+    "mssql": "^12.7.1",
+    "pg": "^8.23.1"
+  },
+  "optionalDependencies": {
+    "msnodesqlv8": "^5.6.0"
   }
 }

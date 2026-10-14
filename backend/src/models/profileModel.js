@@ -1,10 +1,15 @@
 const connectDB = require("../config/db");
+const runQuery = require("../config/query");
 
 // Get all profiles
 const getAllProfiles = async () => {
   const pool = await connectDB();
 
-  const result = await pool.request().query("SELECT * FROM portfolio.Profiles");
+  const result = await runQuery(
+    pool,
+    "SELECT * FROM portfolio.Profiles",
+    'SELECT * FROM portfolio."Profiles"',
+  );
 
   return result.recordset;
 };
@@ -13,10 +18,12 @@ const getAllProfiles = async () => {
 const getProfileById = async (id) => {
   const pool = await connectDB();
 
-  const result = await pool
-    .request()
-    .input("id", id)
-    .query("SELECT * FROM portfolio.Profiles WHERE ProfileId = @id");
+  const result = await runQuery(
+    pool,
+    "SELECT * FROM portfolio.Profiles WHERE ProfileId = @id",
+    'SELECT * FROM portfolio."Profiles" WHERE "ProfileId" = $1',
+    { id },
+  );
 
   return result.recordset[0];
 };
@@ -33,21 +40,23 @@ const createProfile = async (
 ) => {
   const pool = await connectDB();
 
-  const result = await pool
-    .request()
-    .input("userId", userId)
-    .input("fullName", fullName)
-    .input("title", title)
-    .input("bio", bio)
-    .input("imageUrl", imageUrl)
-    .input("location", location)
-    .input("cvUrl", cvUrl).query(`
+  const result = await runQuery(
+    pool,
+    `
       INSERT INTO portfolio.Profiles
       (UserId, FullName, Title, Bio, ImageUrl, Location, CvUrl)
       OUTPUT INSERTED.*
       VALUES
       (@userId, @fullName, @title, @bio, @imageUrl, @location, @cvUrl)
-    `);
+    `,
+    `
+      INSERT INTO portfolio."Profiles"
+      ("UserId", "FullName", "Title", "Bio", "ImageUrl", "Location", "CvUrl")
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *
+    `,
+    { userId, fullName, title, bio, imageUrl, location, cvUrl },
+  );
 
   return result.recordset[0];
 };
@@ -65,16 +74,9 @@ const updateProfile = async (
 ) => {
   const pool = await connectDB();
 
-  const result = await pool
-    .request()
-    .input("id", id)
-    .input("userId", userId)
-    .input("fullName", fullName)
-    .input("title", title)
-    .input("bio", bio)
-    .input("imageUrl", imageUrl)
-    .input("location", location)
-    .input("cvUrl", cvUrl).query(`
+  const result = await runQuery(
+    pool,
+    `
       UPDATE portfolio.Profiles
       SET
         UserId = @userId,
@@ -86,7 +88,22 @@ const updateProfile = async (
         CvUrl = @cvUrl
       OUTPUT INSERTED.*
       WHERE ProfileId = @id
-    `);
+    `,
+    `
+      UPDATE portfolio."Profiles"
+      SET
+        "UserId" = $2,
+        "FullName" = $3,
+        "Title" = $4,
+        "Bio" = $5,
+        "ImageUrl" = $6,
+        "Location" = $7,
+        "CvUrl" = $8
+      WHERE "ProfileId" = $1
+      RETURNING *
+    `,
+    { id, userId, fullName, title, bio, imageUrl, location, cvUrl },
+  );
 
   return result.recordset[0];
 };
@@ -95,11 +112,15 @@ const updateProfile = async (
 const deleteProfile = async (id) => {
   const pool = await connectDB();
 
-  const result = await pool.request().input("id", id).query(`
+  const result = await runQuery(pool, `
       DELETE FROM portfolio.Profiles
       OUTPUT DELETED.*
       WHERE ProfileId = @id
-    `);
+    `, `
+      DELETE FROM portfolio."Profiles"
+      WHERE "ProfileId" = $1
+      RETURNING *
+    `, { id });
 
   return result.recordset[0];
 };

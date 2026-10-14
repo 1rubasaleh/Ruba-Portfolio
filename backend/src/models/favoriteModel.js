@@ -1,12 +1,15 @@
 const connectDB = require("../config/db");
+const runQuery = require("../config/query");
 
 // Get all favorites
 const getAllFavorites = async () => {
   const pool = await connectDB();
 
-  const result = await pool
-    .request()
-    .query("SELECT * FROM portfolio.Favorites");
+  const result = await runQuery(
+    pool,
+    "SELECT * FROM portfolio.Favorites",
+    'SELECT * FROM portfolio."Favorites"',
+  );
 
   return result.recordset;
 };
@@ -15,11 +18,15 @@ const getAllFavorites = async () => {
 const getFavoritesByUserId = async (userId) => {
   const pool = await connectDB();
 
-  const result = await pool.request().input("userId", userId).query(`
+  const result = await runQuery(pool, `
       SELECT *
       FROM portfolio.Favorites
       WHERE UserId = @userId
-    `);
+    `, `
+      SELECT *
+      FROM portfolio."Favorites"
+      WHERE "UserId" = $1
+    `, { userId });
 
   return result.recordset;
 };
@@ -28,11 +35,15 @@ const getFavoritesByUserId = async (userId) => {
 const getUsersByProjectId = async (projectId) => {
   const pool = await connectDB();
 
-  const result = await pool.request().input("projectId", projectId).query(`
+  const result = await runQuery(pool, `
       SELECT *
       FROM portfolio.Favorites
       WHERE ProjectId = @projectId
-    `);
+    `, `
+      SELECT *
+      FROM portfolio."Favorites"
+      WHERE "ProjectId" = $1
+    `, { projectId });
 
   return result.recordset;
 };
@@ -41,16 +52,22 @@ const getUsersByProjectId = async (projectId) => {
 const createFavorite = async (userId, projectId) => {
   const pool = await connectDB();
 
-  const result = await pool
-    .request()
-    .input("userId", userId)
-    .input("projectId", projectId).query(`
+  const result = await runQuery(
+    pool,
+    `
       INSERT INTO portfolio.Favorites
       (UserId, ProjectId)
       OUTPUT INSERTED.*
       VALUES
       (@userId, @projectId)
-    `);
+    `,
+    `
+      INSERT INTO portfolio."Favorites" ("UserId", "ProjectId")
+      VALUES ($1, $2)
+      RETURNING *
+    `,
+    { userId, projectId },
+  );
 
   return result.recordset[0];
 };
@@ -59,15 +76,22 @@ const createFavorite = async (userId, projectId) => {
 const deleteFavorite = async (userId, projectId) => {
   const pool = await connectDB();
 
-  const result = await pool
-    .request()
-    .input("userId", userId)
-    .input("projectId", projectId).query(`
+  const result = await runQuery(
+    pool,
+    `
       DELETE FROM portfolio.Favorites
       OUTPUT DELETED.*
       WHERE UserId = @userId
       AND ProjectId = @projectId
-    `);
+    `,
+    `
+      DELETE FROM portfolio."Favorites"
+      WHERE "UserId" = $1
+      AND "ProjectId" = $2
+      RETURNING *
+    `,
+    { userId, projectId },
+  );
 
   return result.recordset[0];
 };

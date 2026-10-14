@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const connectDB = require("../config/db");
+const runQuery = require("../config/query");
 
 // Register
 const register = async (req, res) => {
@@ -60,13 +61,15 @@ const register = async (req, res) => {
     }
 
     const pool = await connectDB();
-    const existingUser = await pool
-      .request()
-      .input("email", normalizedEmail).query(`
+    const existingUser = await runQuery(pool, `
         SELECT UserId
         FROM portfolio.Users
         WHERE Email = @email
-      `);
+      `, `
+        SELECT "UserId"
+        FROM portfolio."Users"
+        WHERE "Email" = $1
+      `, { email: normalizedEmail });
 
     if (existingUser.recordset.length > 0) {
       return res.status(409).json({
@@ -77,12 +80,15 @@ const register = async (req, res) => {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const userRoleResult = await pool.request().input("roleName", "user")
-      .query(`
+    const userRoleResult = await runQuery(pool, `
         SELECT RoleId
         FROM portfolio.Roles
         WHERE LOWER(LTRIM(RTRIM(RoleName))) = @roleName
-      `);
+      `, `
+        SELECT "RoleId"
+        FROM portfolio."Roles"
+        WHERE LOWER(BTRIM("RoleName")) = $1
+      `, { roleName: "user" });
 
     if (userRoleResult.recordset.length !== 1) {
       console.error(
@@ -93,12 +99,9 @@ const register = async (req, res) => {
       });
     }
 
-    const result = await pool
-      .request()
-      .input("name", normalizedName)
-      .input("email", normalizedEmail)
-      .input("passwordHash", passwordHash)
-      .input("roleId", userRoleResult.recordset[0].RoleId).query(`
+    const result = await runQuery(
+      pool,
+      `
         INSERT INTO portfolio.Users
         (Name, Email, PasswordHash, RoleId)
         OUTPUT
@@ -109,7 +112,20 @@ const register = async (req, res) => {
           INSERTED.CreatedAt
         VALUES
           (@name, @email, @passwordHash, @roleId)
-      `);
+      `,
+      `
+          INSERT INTO portfolio."Users"
+          ("Name", "Email", "PasswordHash", "RoleId")
+          VALUES ($1, $2, $3, $4)
+          RETURNING "UserId", "Name", "Email", "RoleId", "CreatedAt"
+      `,
+      {
+          name: normalizedName,
+          email: normalizedEmail,
+          passwordHash,
+          roleId: userRoleResult.recordset[0].RoleId,
+      },
+    );
 
     res.status(201).json({
       message: "User registered successfully",
@@ -118,7 +134,11 @@ const register = async (req, res) => {
   } catch (error) {
     console.error(error);
 
-    if (error.number === 2601 || error.number === 2627) {
+    if (
+      error.number === 2601 ||
+      error.number === 2627 ||
+      error.code === "23505"
+    ) {
       return res.status(409).json({
         message: "Email already exists",
       });
@@ -145,14 +165,18 @@ const login = async (req, res) => {
 
     const pool = await connectDB();
 
-    const result = await pool
-      .request()
-      .input("email", normalizedEmail).query(`
+    const result = await runQuery(pool, `
         SELECT u.UserId, u.Name, u.Email, u.PasswordHash, u.RoleId, r.RoleName
         FROM portfolio.Users AS u
         INNER JOIN portfolio.Roles AS r ON r.RoleId = u.RoleId
         WHERE u.Email = @email
-      `);
+      `, `
+        SELECT u."UserId", u."Name", u."Email", u."PasswordHash",
+               u."RoleId", r."RoleName"
+        FROM portfolio."Users" AS u
+        INNER JOIN portfolio."Roles" AS r ON r."RoleId" = u."RoleId"
+        WHERE u."Email" = $1
+      `, { email: normalizedEmail });
 
     // Check if user exists
     if (result.recordset.length === 0) {

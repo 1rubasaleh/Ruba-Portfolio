@@ -19,12 +19,58 @@ local development, it can load these settings from the ignored `backend/.env`
 file and use Windows authentication. Never commit database credentials or
 local connection details.
 
-For a hosted Linux API such as Azure App Service, set
-`DB_AUTH_MODE=sql`, `DB_SERVER`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` in the
-hosting provider's application settings. The SQL client uses encrypted
-connections and verifies the server certificate. Set `JWT_SECRET` and
-`FRONTEND_ORIGINS` there as well. Do not copy the local Windows-authentication
-configuration to a hosted service.
+For the free demo deployment, the API runs on Render and uses PostgreSQL on
+Neon. The checked-in `render.yaml` selects Render's free Oregon service and
+defines required secrets as unsynced values. Set `DATABASE_URL` to the Neon
+connection string and `FRONTEND_ORIGINS` to the exact Vercel site origin in
+Render's environment settings. Render generates `JWT_SECRET` automatically.
+Never commit database connection strings or JWT secrets.
+
+The backend still supports the existing local SQL Server setup. Local
+development defaults to Windows authentication; use the PostgreSQL mode only
+for the hosted service or when intentionally connecting to the migrated
+database:
+
+```text
+DB_AUTH_MODE=postgres
+DATABASE_URL=<Neon connection string>
+```
+
+PostgreSQL connections require TLS and verify the database certificate.
+`DB_AUTH_MODE=sql` remains available for SQL-authenticated SQL Server
+connections.
+
+## Migrating SQL Server data to Neon
+
+The repository includes the PostgreSQL schema and a one-time migration utility
+based on the actual `portfolio` schema. It copies roles, accounts (including
+password hashes and role assignments), projects, skills, profiles, education,
+experience, favorites, and contact messages. It preserves identity values,
+primary keys, unique constraints, and foreign keys. The migration is
+transactional and refuses to write into target tables that already contain
+data.
+
+1. Keep the source SQL Server available on the machine running the migration.
+   In the ignored `backend/.env`, keep the local SQL Server settings and add
+   `DATABASE_URL` with the Neon connection string. Make sure
+   `DB_AUTH_MODE` is not set to `postgres` for this source-to-target operation.
+2. Run from the `backend` directory:
+
+   ```powershell
+   npm run db:migrate:postgres
+   ```
+
+3. Wait for the script to report successful completion, then set the same
+   `DATABASE_URL` as a secret in the Render service environment. Do not add it
+   to source control, a frontend setting, or a public issue.
+4. Deploy the Render service from the repository's `render.yaml`. Set
+   `FRONTEND_ORIGINS` in Render to the exact production Vercel origin after
+   the frontend project is created.
+
+The Neon free plan and Render free web service have usage and availability
+limits. Render may spin down the API after inactivity, and the first request
+after that can be delayed. This setup is for a personal demo, not a
+production-service availability guarantee.
 
 The local CORS allowlist includes `http://localhost:5173` and
 `http://127.0.0.1:5173` (plus the corresponding Vite preview origins). For a
@@ -51,8 +97,8 @@ API operations available.
 
 1. Register your own account through the portfolio, then confirm it can log in
    as a normal user.
-2. In a local PowerShell window on the machine with the configured SQL Server,
-   run:
+2. In a local PowerShell window on the machine with access to the target
+   database, run:
 
    ```powershell
    cd backend
@@ -69,12 +115,17 @@ API operations available.
    account. The app verifies the user through `GET /auth/me`; its role comes
    from the database, not a browser-stored role claim.
 
-The database structure used by the script is the existing
-`portfolio.Users(UserId, Email, RoleId)` and `portfolio.Roles(RoleId, RoleName)`
-schema. No schema migration is required. API authorization reloads the user's
-current role from those tables for each authenticated request. Ordinary users
-cannot grant themselves roles through registration, and hiding dashboard
-navigation is not the authorization boundary.
+The script uses the configured database provider and the matching
+`portfolio.Users(UserId, Email, RoleId)` and
+`portfolio.Roles(RoleId, RoleName)` tables. API authorization reloads the
+user's current role from those tables for each authenticated request. Ordinary
+users cannot grant themselves roles through registration, and hiding
+dashboard navigation is not the authorization boundary.
+
+To grant the role in the migrated Neon database, configure `DB_AUTH_MODE` as
+`postgres` and `DATABASE_URL` in the ignored local `backend/.env` before
+running the same command. The migration preserves the existing role
+assignments, so this step is only needed if the account needs a role change.
 
 ## Admin content dashboard
 
