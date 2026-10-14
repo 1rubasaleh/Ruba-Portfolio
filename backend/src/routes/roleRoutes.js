@@ -12,14 +12,16 @@ const {
   deleteRole,
 } = require("../controllers/roleController.js");
 
+router.use(authMiddleware, authorize("admin"));
+
 router.get("/", getRoles);
 
 router.get("/:id", getRoleById);
 
-router.post("/", authMiddleware, authorize(1), createRole);
+router.post("/", createRole);
 
-router.put("/:id", authMiddleware, authorize(1), updateRole);
+router.put("/:id", updateRole);
 
-router.delete("/:id", authMiddleware, authorize(1), deleteRole);
+router.delete("/:id", deleteRole);
 
 module.exports = router;

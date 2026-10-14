@@ -18,10 +18,10 @@ router.get("/profile/:profileId", getExperiencesByProfileId);
 
 router.get("/:id", getExperienceById);
 
-router.post("/", authMiddleware, authorize(1), createExperience);
+router.post("/", authMiddleware, authorize("admin"), createExperience);
 
-router.put("/:id", authMiddleware, authorize(1), updateExperience);
+router.put("/:id", authMiddleware, authorize("admin"), updateExperience);
 
-router.delete("/:id", authMiddleware, authorize(1), deleteExperience);
+router.delete("/:id", authMiddleware, authorize("admin"), deleteExperience);
 
 module.exports = router;

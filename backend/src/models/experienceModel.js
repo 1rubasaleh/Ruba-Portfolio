@@ -6,7 +6,7 @@ const getAllExperiences = async () => {
 
   const result = await pool
     .request()
-    .query("SELECT * FROM portfolio.Experience");
+    .query("SELECT * FROM portfolio.Experiences");
 
   return result.recordset;
 };
@@ -17,7 +17,7 @@ const getExperienceById = async (id) => {
 
   const result = await pool.request().input("id", id).query(`
       SELECT *
-      FROM portfolio.Experience
+      FROM portfolio.Experiences
       WHERE ExperienceId = @id
     `);
 
@@ -30,7 +30,7 @@ const getExperiencesByProfileId = async (profileId) => {
 
   const result = await pool.request().input("profileId", profileId).query(`
       SELECT *
-      FROM portfolio.Experience
+      FROM portfolio.Experiences
       WHERE ProfileId = @profileId
     `);
 
@@ -56,7 +56,7 @@ const createExperience = async (
     .input("startDate", startDate)
     .input("endDate", endDate)
     .input("description", description).query(`
-      INSERT INTO portfolio.Experience
+      INSERT INTO portfolio.Experiences
       (ProfileId, CompanyName, Position, StartDate, EndDate, Description)
       OUTPUT INSERTED.*
       VALUES
@@ -87,7 +87,7 @@ const updateExperience = async (
     .input("startDate", startDate)
     .input("endDate", endDate)
     .input("description", description).query(`
-      UPDATE portfolio.Experience
+      UPDATE portfolio.Experiences
       SET
         ProfileId = @profileId,
         CompanyName = @companyName,
@@ -107,7 +107,7 @@ const deleteExperience = async (id) => {
   const pool = await connectDB();
 
   const result = await pool.request().input("id", id).query(`
-      DELETE FROM portfolio.Experience
+      DELETE FROM portfolio.Experiences
       OUTPUT DELETED.*
       WHERE ExperienceId = @id
     `);

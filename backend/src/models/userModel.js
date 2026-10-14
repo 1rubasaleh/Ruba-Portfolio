@@ -4,7 +4,10 @@ const connectDB = require("../config/db");
 const getAllUsers = async () => {
   const pool = await connectDB();
 
-  const result = await pool.request().query("SELECT * FROM portfolio.Users");
+  const result = await pool.request().query(`
+    SELECT UserId, Name, Email, RoleId, CreatedAt
+    FROM portfolio.Users
+  `);
 
   return result.recordset;
 };
@@ -16,7 +19,11 @@ const getUserById = async (id) => {
   const result = await pool
     .request()
     .input("id", id)
-    .query("SELECT * FROM portfolio.Users WHERE UserId = @id");
+    .query(`
+      SELECT UserId, Name, Email, RoleId, CreatedAt
+      FROM portfolio.Users
+      WHERE UserId = @id
+    `);
 
   return result.recordset[0];
 };
@@ -33,7 +40,12 @@ const createUser = async (name, email, passwordHash, roleId) => {
     .input("roleId", roleId).query(`
       INSERT INTO portfolio.Users
       (Name, Email, PasswordHash, RoleId)
-      OUTPUT INSERTED.*
+      OUTPUT
+        INSERTED.UserId,
+        INSERTED.Name,
+        INSERTED.Email,
+        INSERTED.RoleId,
+        INSERTED.CreatedAt
       VALUES
       (@name, @email, @passwordHash, @roleId)
     `);
@@ -58,7 +70,12 @@ const updateUser = async (id, name, email, passwordHash, roleId) => {
         Email = @email,
         PasswordHash = @passwordHash,
         RoleId = @roleId
-      OUTPUT INSERTED.*
+      OUTPUT
+        INSERTED.UserId,
+        INSERTED.Name,
+        INSERTED.Email,
+        INSERTED.RoleId,
+        INSERTED.CreatedAt
       WHERE UserId = @id
     `);
 
@@ -71,7 +88,12 @@ const deleteUser = async (id) => {
 
   const result = await pool.request().input("id", id).query(`
       DELETE FROM portfolio.Users
-      OUTPUT DELETED.*
+      OUTPUT
+        DELETED.UserId,
+        DELETED.Name,
+        DELETED.Email,
+        DELETED.RoleId,
+        DELETED.CreatedAt
       WHERE UserId = @id
     `);
 

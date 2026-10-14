@@ -18,10 +18,10 @@ router.get("/", getSkills);
 
 router.get("/:id", getSkillById);
 
-router.post("/", authMiddleware, authorize(1), createSkill);
+router.post("/", authMiddleware, authorize("admin"), createSkill);
 
-router.put("/:id", authMiddleware, authorize(1), updateSkill);
+router.put("/:id", authMiddleware, authorize("admin"), updateSkill);
 
-router.delete("/:id", authMiddleware, authorize(1), deleteSkill);
+router.delete("/:id", authMiddleware, authorize("admin"), deleteSkill);
 
 module.exports = router;

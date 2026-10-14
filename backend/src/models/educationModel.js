@@ -6,7 +6,7 @@ const getAllEducation = async () => {
 
   const result = await pool
     .request()
-    .query("SELECT * FROM portfolio.Education");
+    .query("SELECT * FROM portfolio.Educations");
 
   return result.recordset;
 };
@@ -17,7 +17,7 @@ const getEducationById = async (id) => {
 
   const result = await pool.request().input("id", id).query(`
       SELECT *
-      FROM portfolio.Education
+      FROM portfolio.Educations
       WHERE EducationId = @id
     `);
 
@@ -30,7 +30,7 @@ const getEducationByProfileId = async (profileId) => {
 
   const result = await pool.request().input("profileId", profileId).query(`
       SELECT *
-      FROM portfolio.Education
+      FROM portfolio.Educations
       WHERE ProfileId = @profileId
     `);
 
@@ -58,7 +58,7 @@ const createEducation = async (
     .input("startDate", startDate)
     .input("endDate", endDate)
     .input("description", description).query(`
-      INSERT INTO portfolio.Education
+      INSERT INTO portfolio.Educations
       (
         ProfileId,
         Institution,
@@ -107,7 +107,7 @@ const updateEducation = async (
     .input("startDate", startDate)
     .input("endDate", endDate)
     .input("description", description).query(`
-      UPDATE portfolio.Education
+      UPDATE portfolio.Educations
       SET
         ProfileId = @profileId,
         Institution = @institution,
@@ -128,7 +128,7 @@ const deleteEducation = async (id) => {
   const pool = await connectDB();
 
   const result = await pool.request().input("id", id).query(`
-      DELETE FROM portfolio.Education
+      DELETE FROM portfolio.Educations
       OUTPUT DELETED.*
       WHERE EducationId = @id
     `);

@@ -1,114 +1,126 @@
-import { Link } from "react-router-dom";
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/useAuth";
 
 export default function Navbar() {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const { user, isLoading, logout } = useAuth();
+  const isAuthenticated = Boolean(user);
+  const isAdmin =
+    String(user?.roleName || "").toLowerCase() === "admin";
+
+  const handleLogout = () => {
+    logout();
+    setIsOpen(false);
+    navigate("/");
+  };
+
+  const publicLinks = [
+    { to: "/", label: "Home" },
+    { to: "/about", label: "About" },
+    { to: "/skills", label: "Skills" },
+    { to: "/projects", label: "Projects" },
+    { to: "/contact", label: "Contact" },
+  ];
+
+  const authLinks = [
+    { to: "/favorites", label: "Favorites" },
+    { to: "/profile", label: "Profile" },
+  ];
+
+  const navContent = (
+    <>
+      {publicLinks.map((link) => (
+        <Link
+          key={link.to}
+          to={link.to}
+          onClick={() => setIsOpen(false)}
+          className="text-sm font-medium text-gray-300 transition-colors hover:text-purple-400"
+        >
+          {link.label}
+        </Link>
+      ))}
+
+      {isAuthenticated ? (
+        <>
+          {authLinks.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              onClick={() => setIsOpen(false)}
+              className="text-sm font-medium text-gray-300 transition-colors hover:text-purple-400"
+            >
+              {link.label}
+            </Link>
+          ))}
+
+          {isAdmin && (
+            <Link
+              to="/admin"
+              onClick={() => setIsOpen(false)}
+              className="text-sm font-medium text-gray-300 transition-colors hover:text-purple-400"
+            >
+              Admin Dashboard
+            </Link>
+          )}
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="text-sm font-medium text-gray-300 transition-colors hover:text-purple-400"
+          >
+            Logout
+          </button>
+        </>
+      ) : !isLoading ? (
+        <>
+          <Link
+            to="/login"
+            onClick={() => setIsOpen(false)}
+            className="text-sm font-medium text-gray-300 transition-colors hover:text-purple-400"
+          >
+            Login
+          </Link>
+
+          <Link
+            to="/register"
+            onClick={() => setIsOpen(false)}
+            className="rounded-full bg-purple-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-purple-500"
+          >
+            Register
+          </Link>
+        </>
+      ) : null}
+    </>
+  );
 
   return (
-    <nav className="border-b border-slate-800">
-      <div className="w-full px-8 py-4 flex justify-between items-center">
-        {/* Logo */}
-        <div
-          className="text-lg
-        font-semibold"
-        >
-          <span className="font-['Dancing_Script']">Ruba</span>
-          <span className="font-['Dancing_Script'] text-purple-500">Saleh</span>
-        </div>
+    <nav className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-sm">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-4 sm:px-8">
+        <Link to="/" className="text-lg font-semibold text-white">
+          <span className="font-['Dancing_Script'] text-2xl">Ruba</span>
+          <span className="font-['Dancing_Script'] text-2xl text-purple-400">Saleh</span>
+        </Link>
 
-        {/* Mobile Button + Dropdown */}
-        <div className="relative">
+        <div className="relative sm:hidden">
           <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="sm:hidden text-gray-300 text-xl"
+            type="button"
+            onClick={() => setIsOpen((current) => !current)}
+            className="text-xl text-gray-200"
+            aria-label="Toggle menu"
           >
             ☰
           </button>
 
           {isOpen && (
-            <div className="absolute right-0 top-full mt-2 w-48 rounded-lg border border-slate-700 bg-slate-900 p-4 shadow-xl z-50 sm:hidden">
-              <div className="flex flex-col gap-4">
-                <Link
-                  to="/"
-                  onClick={() => setIsOpen(false)}
-                  className="text-sm font-medium text-gray-300 hover:text-purple-400 transition-colors"
-                >
-                  Home
-                </Link>
-
-                <Link
-                  to="/about"
-                  onClick={() => setIsOpen(false)}
-                  className="text-sm font-medium text-gray-300 hover:text-purple-400 transition-colors"
-                >
-                  About
-                </Link>
-
-                <Link
-                  to="/skills"
-                  onClick={() => setIsOpen(false)}
-                  className="text-sm font-medium text-gray-300 hover:text-purple-400 transition-colors"
-                >
-                  Skills
-                </Link>
-
-                <Link
-                  to="/projects"
-                  onClick={() => setIsOpen(false)}
-                  className="text-sm font-medium text-gray-300 hover:text-purple-400 transition-colors"
-                >
-                  Projects
-                </Link>
-
-                <Link
-                  to="/contact"
-                  onClick={() => setIsOpen(false)}
-                  className="text-sm font-medium text-gray-300 hover:text-purple-400 transition-colors"
-                >
-                  Contact
-                </Link>
-              </div>
+            <div className="absolute right-0 top-full z-50 mt-3 w-52 rounded-2xl border border-slate-700 bg-slate-950 p-4 shadow-2xl shadow-slate-950/50">
+              <div className="flex flex-col gap-3">{navContent}</div>
             </div>
           )}
         </div>
 
-        {/* Desktop Menu */}
-        <div className="hidden sm:flex gap-6">
-          <Link
-            to="/"
-            className="text-sm font-medium text-gray-300 hover:text-purple-400 transition-colors"
-          >
-            Home
-          </Link>
-
-          <Link
-            to="/about"
-            className="text-sm font-medium text-gray-300 hover:text-purple-400 transition-colors"
-          >
-            About
-          </Link>
-
-          <Link
-            to="/skills"
-            className="text-sm font-medium text-gray-300 hover:text-purple-400 transition-colors"
-          >
-            Skills
-          </Link>
-
-          <Link
-            to="/projects"
-            className="text-sm font-medium text-gray-300 hover:text-purple-400 transition-colors"
-          >
-            Projects
-          </Link>
-
-          <Link
-            to="/contact"
-            className="text-sm font-medium text-gray-300 hover:text-purple-400 transition-colors"
-          >
-            Contact
-          </Link>
-        </div>
+        <div className="hidden items-center gap-6 sm:flex">{navContent}</div>
       </div>
     </nav>
   );

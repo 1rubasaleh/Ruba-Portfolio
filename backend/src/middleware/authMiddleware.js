@@ -1,25 +1,60 @@
 const jwt = require("jsonwebtoken");
+const connectDB = require("../config/db");
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  const tokenMatch = /^Bearer\s+(.+)$/i.exec(authHeader || "");
+
+  if (!tokenMatch) {
+    return res.status(401).json({
+      message: "A valid bearer access token is required",
+    });
+  }
+
+  let decoded;
   try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader) {
-      return res.status(401).json({
-        message: "Access token is required",
-      });
-    }
-
-    const token = authHeader.split(" ")[1];
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    req.user = decoded;
-
-    next();
+    decoded = jwt.verify(tokenMatch[1], process.env.JWT_SECRET);
   } catch (error) {
     return res.status(401).json({
       message: "Invalid or expired token",
+    });
+  }
+
+  if (!decoded || typeof decoded !== "object" || !decoded.userId) {
+    return res.status(401).json({
+      message: "Invalid or expired token",
+    });
+  }
+
+  try {
+    const pool = await connectDB();
+    const result = await pool.request().input("userId", decoded.userId).query(`
+      SELECT u.UserId, u.Name, u.Email, u.RoleId, r.RoleName
+      FROM portfolio.Users AS u
+      INNER JOIN portfolio.Roles AS r ON r.RoleId = u.RoleId
+      WHERE u.UserId = @userId
+    `);
+
+    const user = result.recordset[0];
+    if (!user) {
+      return res.status(401).json({
+        message: "The account associated with this token no longer exists",
+      });
+    }
+
+    req.user = {
+      userId: user.UserId,
+      name: user.Name,
+      email: user.Email,
+      roleId: user.RoleId,
+      roleName: user.RoleName,
+    };
+
+    return next();
+  } catch (error) {
+    console.error("Unable to verify authenticated user:", error);
+    return res.status(500).json({
+      message: "Unable to verify account permissions",
     });
   }
 };

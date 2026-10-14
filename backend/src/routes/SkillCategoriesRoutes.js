@@ -15,10 +15,10 @@ router.get("/", getSkillCategories);
 
 router.get("/:id", getSkillCategoryById);
 
-router.post("/", authMiddleware, authorize(1), createSkillCategory);
+router.post("/", authMiddleware, authorize("admin"), createSkillCategory);
 
-router.put("/:id", authMiddleware, authorize(1), updateSkillCategory);
+router.put("/:id", authMiddleware, authorize("admin"), updateSkillCategory);
 
-router.delete("/:id", authMiddleware, authorize(1), deleteSkillCategory);
+router.delete("/:id", authMiddleware, authorize("admin"), deleteSkillCategory);
 
 module.exports = router;

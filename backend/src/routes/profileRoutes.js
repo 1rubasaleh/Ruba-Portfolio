@@ -16,10 +16,10 @@ router.get("/", getProfiles);
 
 router.get("/:id", getProfileById);
 
-router.post("/", authMiddleware, authorize(1), createProfile);
+router.post("/", authMiddleware, authorize("admin"), createProfile);
 
-router.put("/:id", authMiddleware, authorize(1), updateProfile);
+router.put("/:id", authMiddleware, authorize("admin"), updateProfile);
 
-router.delete("/:id", authMiddleware, authorize(1), deleteProfile);
+router.delete("/:id", authMiddleware, authorize("admin"), deleteProfile);
 
 module.exports = router;

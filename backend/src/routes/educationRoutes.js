@@ -19,10 +19,10 @@ router.get("/:id", getEducationById);
 
 router.get("/profile/:profileId", getEducationByProfileId);
 
-router.post("/", authMiddleware, authorize(1), createEducation);
+router.post("/", authMiddleware, authorize("admin"), createEducation);
 
-router.put("/:id", authMiddleware, authorize(1), updateEducation);
+router.put("/:id", authMiddleware, authorize("admin"), updateEducation);
 
-router.delete("/:id", authMiddleware, authorize(1), deleteEducation);
+router.delete("/:id", authMiddleware, authorize("admin"), deleteEducation);
 
 module.exports = router;

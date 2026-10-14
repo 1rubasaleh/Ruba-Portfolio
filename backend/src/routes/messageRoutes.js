@@ -10,14 +10,14 @@ const {
   deleteMessage,
 } = require("../controllers/messageController.js");
 
-router.get("/", getMessages);
+router.get("/", authMiddleware, authorize("admin"), getMessages);
 
-router.get("/:id", getMessageById);
+router.get("/:id", authMiddleware, authorize("admin"), getMessageById);
 
 router.post("/", createMessage);
 
-router.put("/:id", updateMessage);
+router.put("/:id", authMiddleware, authorize("admin"), updateMessage);
 
-router.delete("/:id", authMiddleware, authorize(1), deleteMessage);
+router.delete("/:id", authMiddleware, authorize("admin"), deleteMessage);
 
 module.exports = router;

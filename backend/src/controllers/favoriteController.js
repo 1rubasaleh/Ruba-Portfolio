@@ -73,7 +73,7 @@ const createFavoriteController = async (req, res) => {
 const deleteFavoriteController = async (req, res) => {
   try {
     const favorite = await deleteFavorite(
-      req.params.userId,
+      req.user.userId,
       req.params.projectId,
     );
 

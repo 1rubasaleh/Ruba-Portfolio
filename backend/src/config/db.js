@@ -19,6 +19,7 @@ const connectDB = async () => {
     return pool;
   } catch (error) {
     console.error("Database connection failed:", error);
+    throw error;
   }
 };
 

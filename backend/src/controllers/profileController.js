@@ -45,11 +45,10 @@ const getProfileByIdController = async (req, res) => {
 // Create profile
 const createProfileController = async (req, res) => {
   try {
-    const { userId, fullName, title, bio, imageUrl, location, cvUrl } =
-      req.body;
+    const { fullName, title, bio, imageUrl, location, cvUrl } = req.body;
 
     const profile = await createProfile(
-      userId,
+      req.user.userId,
       fullName,
       title,
       bio,
@@ -71,12 +70,11 @@ const createProfileController = async (req, res) => {
 // Update profile
 const updateProfileController = async (req, res) => {
   try {
-    const { userId, fullName, title, bio, imageUrl, location, cvUrl } =
-      req.body;
+    const { fullName, title, bio, imageUrl, location, cvUrl } = req.body;
 
     const profile = await updateProfile(
       req.params.id,
-      userId,
+      req.user.userId,
       fullName,
       title,
       bio,

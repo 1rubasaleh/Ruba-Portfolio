@@ -17,12 +17,12 @@ router.get("/project/:projectId", getSkillsByProjectId);
 
 router.get("/skill/:skillId", getProjectsBySkillId);
 
-router.post("/", authMiddleware, authorize(1), createProjectSkill);
+router.post("/", authMiddleware, authorize("admin"), createProjectSkill);
 
 router.delete(
   "/:projectId/:skillId",
   authMiddleware,
-  authorize(1),
+  authorize("admin"),
   deleteProjectSkill,
 );
 

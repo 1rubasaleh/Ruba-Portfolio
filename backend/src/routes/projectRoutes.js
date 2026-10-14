@@ -11,7 +11,7 @@ const {
 } = require("../controllers/projectController");
 router.get("/", getProjects);
 router.get("/:id", getProjectById);
-router.post("/", authMiddleware, authorize(1), createProject);
-router.put("/:id", authMiddleware, authorize(1), updateProject);
-router.delete("/:id", authMiddleware, authorize(1), deleteProject);
+router.post("/", authMiddleware, authorize("admin"), createProject);
+router.put("/:id", authMiddleware, authorize("admin"), updateProject);
+router.delete("/:id", authMiddleware, authorize("admin"), deleteProject);
 module.exports = router;
