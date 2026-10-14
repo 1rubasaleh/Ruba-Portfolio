@@ -14,10 +14,17 @@ cd backend
 npm start
 ```
 
-The API waits for SQL Server and requires `JWT_SECRET` from the ignored local
-`.env` file before it listens. SQL connectivity is configured locally in
-`src/config/db.js`; do not commit database credentials or local connection
-details.
+The API waits for SQL Server and requires `JWT_SECRET` before it listens. For
+local development, it can load these settings from the ignored `backend/.env`
+file and use Windows authentication. Never commit database credentials or
+local connection details.
+
+For a hosted Linux API such as Azure App Service, set
+`DB_AUTH_MODE=sql`, `DB_SERVER`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` in the
+hosting provider's application settings. The SQL client uses encrypted
+connections and verifies the server certificate. Set `JWT_SECRET` and
+`FRONTEND_ORIGINS` there as well. Do not copy the local Windows-authentication
+configuration to a hosted service.
 
 The local CORS allowlist includes `http://localhost:5173` and
 `http://127.0.0.1:5173` (plus the corresponding Vite preview origins). For a
@@ -31,6 +38,14 @@ for a local build. It is an origin, not an API path; the frontend adds
 `/auth/register`, `/auth/login`, and other endpoint paths itself. A production
 build without this setting fails API calls with an explicit configuration
 message rather than calling `localhost`.
+
+For Vercel, set the project root directory to `frontend`, build command to
+`npm run build`, output directory to `dist`, and define `VITE_API_URL` as the
+deployed backend origin for Production and Preview environments as appropriate.
+`frontend/vercel.json` routes client-side application paths back to the SPA.
+The backend and a network-accessible SQL Server database must be deployed
+separately; publishing the frontend alone does not make authentication or admin
+API operations available.
 
 ## Granting your own account the admin role
 
